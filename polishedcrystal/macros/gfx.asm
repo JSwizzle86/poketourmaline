@@ -10,10 +10,6 @@ MACRO RGB
 	endr
 ENDM
 
-RGB_S
-	dw palred (\1 >> 5) + palgreen (\2 >> 5) + palblue (\3 >> 5)
-ENDM
-
 palred   EQUS "(1 << 0) *"
 palgreen EQUS "(1 << 5) *"
 palblue  EQUS "(1 << 10) *"

@@ -1,5 +1,5 @@
 AbilityNames:
-	table_width 2, AbilityNames
+	table_width 2
 	dw NoAbility
 	dw Stench
 	dw Drizzle
@@ -102,6 +102,7 @@ AbilityNames:
 	dw IceBody
 	dw SolidRock
 	dw SnowWarning
+	dw HoneyGather
 	dw Frisk
 	dw Reckless
 	dw Pickpocket
@@ -132,6 +133,7 @@ AbilityNames:
 	dw Prankster
 	dw SandForce
 	dw FurCoat
+	dw Bulletproof
 	dw Competitive
 	dw MegaLauncher
 	dw ToughClaws
@@ -146,6 +148,13 @@ AbilityNames:
 	dw NeutralizingGas
 	dw PastelVeil
 	dw QuickDraw
+	dw SteelySpirit
+	dw PerishBody
+	dw ScreenCleaner
+	dw CudChew
+	dw Sharpness
+	dw ArmorTail
+	dw MindsEye
 	assert_table_length NUM_ABILITIES
 
 NoAbility:       rawchar "---@"
@@ -250,6 +259,7 @@ Scrappy:         rawchar "Scrappy@"
 IceBody:         rawchar "Ice Body@"
 SolidRock:       rawchar "Solid Rock@"
 SnowWarning:     rawchar "Snow Warning@"
+HoneyGather:     rawchar "Honey Gather@"
 Frisk:           rawchar "Frisk@"
 Reckless:        rawchar "Reckless@"
 Pickpocket:      rawchar "Pickpocket@"
@@ -280,6 +290,7 @@ SapSipper:       rawchar "Sap Sipper@"
 Prankster:       rawchar "Prankster@"
 SandForce:       rawchar "Sand Force@"
 FurCoat:         rawchar "Fur Coat@"
+Bulletproof:     rawchar "Bulletproof@"
 Competitive:     rawchar "Competitive@"
 MegaLauncher:    rawchar "Mega Launcher@"
 ToughClaws:      rawchar "Tough Claws@"
@@ -294,3 +305,10 @@ GorillaTactics:  rawchar "Gorilla Tactics@"
 NeutralizingGas: rawchar "Neutralizing Gas@"
 PastelVeil:      rawchar "Pastel Veil@"
 QuickDraw:       rawchar "Quick Draw@"
+SteelySpirit:    rawchar "Steely Spirit@"
+PerishBody:      rawchar "Perish Body@"
+ScreenCleaner:   rawchar "Screen Cleaner@"
+CudChew:         rawchar "Cud Chew@"
+Sharpness:       rawchar "Sharpness@"
+ArmorTail:       rawchar "Armor Tail@"
+MindsEye:        rawchar "Mind's Eye@"

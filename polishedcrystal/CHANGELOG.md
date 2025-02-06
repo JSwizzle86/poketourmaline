@@ -1,5 +1,7 @@
 # Changelog
 
+Note: The changelog is severely out of date, and will be updated *later*.
+
 These changes have been made since the current 2.2.0 release. If you build the project as-is, it will include all of them.
 
 > What's the point of going through all the trouble of the debug process if you're going to go and fiddle with the game afterwards…?
@@ -104,6 +106,7 @@ These changes have been made since the current 2.2.0 release. If you build the p
 * Add: TM prices from OR/AS.
 * Add: Update random Wonder Trade OT names.
 * Add: Respawn roaming beasts when released.
+* Add: You can nickname a traded Pokémon once if it has no nickname yet.
 * Add: Mr. Pokémon gives you a non-OT Ditto, not an Egg, for the Masuda breeding method.
 * Add: Use original Jynx sprite.
 * Add: Make overworld sprites darker at night.

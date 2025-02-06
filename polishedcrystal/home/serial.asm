@@ -6,6 +6,10 @@ Serial::
 	push bc
 	push af
 
+	ld a, [wPrinterConnectionOpen]
+	bit PRINTER_CONNECTION_OPEN, a
+	jr nz, .printer
+
 	ldh a, [hSerialConnectionStatus]
 	inc a ; is it equal to -1?
 	jr z, .init_player_number
@@ -65,11 +69,16 @@ Serial::
 	ld a, SERIAL_NO_DATA_BYTE
 	ldh [hSerialSend], a
 
+.end
 	pop af
 	pop bc
 	pop de
 	pop hl
 	reti
+
+.printer
+	farcall _PrinterReceive
+	jr .end
 
 ; hl = send data
 ; de = receive data
@@ -145,15 +154,15 @@ Serial_ExchangeByte::
 
 .doNotIncrementTimeoutCounter
 	ldh a, [rIE]
-	and 1 << SERIAL | 1 << TIMER | 1 << LCD_STAT | 1 << VBLANK
+	and 1 << SERIAL | 1 << TIMER | 1 << VBLANK
 	cp 1 << SERIAL
 	jr nz, .loop
 	ld a, [wLinkByteTimeout]
-	dec a
+	dec a ; no-optimize inefficient WRAM increment/decrement
 	ld [wLinkByteTimeout], a
 	jr nz, .loop
 	ld a, [wLinkByteTimeout + 1]
-	dec a
+	dec a ; no-optimize inefficient WRAM increment/decrement
 	ld [wLinkByteTimeout + 1], a
 	jr nz, .loop
 	ldh a, [hSerialConnectionStatus]
@@ -169,7 +178,7 @@ Serial_ExchangeByte::
 	xor a
 	ldh [hSerialReceivedNewData], a
 	ldh a, [rIE]
-	and 1 << SERIAL | 1 << TIMER | 1 << LCD_STAT | 1 << VBLANK
+	and 1 << SERIAL | 1 << TIMER | 1 << VBLANK
 	sub 1 << SERIAL
 	jr nz, .skipReloadingTimeoutCounter2
 
@@ -200,7 +209,7 @@ Serial_ExchangeByte::
 
 .done
 	ldh a, [rIE]
-	and 1 << SERIAL | 1 << TIMER | 1 << LCD_STAT | 1 << VBLANK
+	and 1 << SERIAL | 1 << TIMER | 1 << VBLANK
 	cp 1 << SERIAL
 	ld a, SERIAL_NO_DATA_BYTE
 	ret z
@@ -247,7 +256,7 @@ Serial_ExchangeSyncBytes::
 	inc hl
 	ldh a, [hSerialIgnoringInitialData]
 	and a
-	ld a, 0
+	ld a, 0 ; no-optimize a = 0
 	ldh [hSerialIgnoringInitialData], a
 	jr nz, .loop
 	ld a, b
@@ -261,7 +270,13 @@ Serial_PlaceWaitingTextAndSyncAndExchangeNybble::
 	call LoadTileMapToTempTileMap
 	call PlaceWaitingText
 	call Serial_SyncAndExchangeNybble
-	jmp Call_LoadTempTileMapToTileMap
+SafeLoadTempTileMapToTileMap::
+	xor a
+	ldh [hBGMapMode], a
+	call LoadTempTileMapToTileMap
+	ld a, 1
+	ldh [hBGMapMode], a
+	ret
 
 PlaceWaitingText::
 	hlcoord 4, 10
@@ -288,6 +303,7 @@ PlaceWaitingText::
 	db "Waiting…!@"
 
 Serial_SyncAndExchangeNybble::
+	vc_hook Wireless_WaitLinkTransfer
 	ld a, $ff
 	ld [wOtherPlayerLinkAction], a
 .loop
@@ -314,14 +330,26 @@ Serial_SyncAndExchangeNybble::
 	inc a
 	jr z, .loop
 
+	vc_patch Wireless_net_delay_1
+if DEF(VIRTUAL_CONSOLE)
+	ld b, 26
+else
 	ld b, 10
+endc
+	vc_patch_end
 .receive
 	call DelayFrame
 	call LinkTransfer
 	dec b
 	jr nz, .receive
 
+	vc_patch Wireless_net_delay_2
+if DEF(VIRTUAL_CONSOLE)
+	ld b, 26
+else
 	ld b, 10
+endc
+	vc_patch_end
 .acknowledge
 	call DelayFrame
 	call LinkDataReceived
@@ -330,6 +358,7 @@ Serial_SyncAndExchangeNybble::
 
 	ld a, [wOtherPlayerLinkAction]
 	ld [wOtherPlayerLinkMode], a
+	vc_hook Wireless_WaitLinkTransfer_ret
 	ret
 
 LinkTransfer::

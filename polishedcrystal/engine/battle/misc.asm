@@ -4,17 +4,35 @@ _CheckContactMove::
 	ld a, b
 	cp HELD_PROTECTIVE_PADS
 	jr z, .protective_pads
+	cp HELD_PUNCHING_GLOVE
+	jr nz, .not_punching_glove
+	farcall IsPunchingMove
+	ret z
+
+.not_punching_glove
 	ld a, BATTLE_VARS_MOVE
 	call GetBattleVar
-	ld hl, ContactMoves
+	cp STRUGGLE
+	ret nc
+	ld hl, AbnormalContactMoves
 	call IsInByteArray
+	ld b, PHYSICAL
+	jr nc, .not_abnormal
+	assert PHYSICAL + 1 == SPECIAL
+	inc b
+.not_abnormal
+	ld a, BATTLE_VARS_MOVE_CATEGORY
+	call GetBattleVar
+	cp b
+	ret z
+	and a
 .protective_pads
 	ccf
 	ret
 
-INCLUDE "data/moves/contact_moves.asm"
+INCLUDE "data/moves/abnormal_contact_moves.asm"
 
-_DisappearUser::
+DisappearUser::
 	xor a
 	ldh [hBGMapMode], a
 	ldh a, [hBattleTurn]

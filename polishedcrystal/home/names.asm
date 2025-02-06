@@ -2,11 +2,13 @@ NamesPointers::
 	dba PokemonNames
 	dba MoveNames
 	dba ApricornNames
+	dba WingNames
 	dba ItemNames
 	dbw 0, wPartyMonOTs
 	dbw 0, wOTPartyMonOTs
 	dba TrainerClassNames
 	dba KeyItemNames
+	dba ExpCandyNames
 
 GetName::
 ; Return name wCurSpecies from name list wNamedObjectTypeBuffer in wStringBuffer1.
@@ -20,8 +22,11 @@ GetName::
 	cp MON_NAME
 	jr nz, .NotPokeName
 
+	ld hl, wNamedObjectIndex
 	ld a, [wCurSpecies]
-	ld [wNamedObjectIndex], a
+	ld [hli], a
+	ld a, [wCurForm]
+	ld [hl], a
 	call GetPokemonName
 	ld hl, MON_NAME_LENGTH
 	add hl, de
@@ -95,25 +100,32 @@ GetBasePokemonName::
 	pop hl
 	ret
 
+GetPartyPokemonName::
+; Get Pokemon name wCurPartySpecies + wCurForm
+	push hl
+	ld hl, wNamedObjectIndex
+	ld a, [wCurPartySpecies]
+	ld [hli], a
+	ld a, [wCurForm]
+	ld [hl], a
+	pop hl
+	; fall-through
 GetPokemonName::
 ; Get Pokemon name wNamedObjectIndex.
 	push hl
 
 ; Each name is ten characters
-	push bc
-	ld a, [wNamedObjectIndex]
-	ld c, a
-	ld a, [wCurForm]
-	ld b, a
-	call GetExtendedSpeciesIndex
-	ld d, b
-	ld e, c
-	pop bc
+	ld hl, wNamedObjectIndex
+	ld a, [hli]
+	ld e, a
+	ld a, [hl]
+	call ConvertFormToExtendedSpecies
+	ld d, a
 	ld h, d
 	ld l, e
+	add hl, hl ; hl = hl * 2
 	add hl, hl ; hl = hl * 4
-	add hl, hl ; hl = hl * 4
-	add hl, de ; hl = (hl*4) + de
+	add hl, de ; hl = (hl*4) + hl
 	add hl, hl ; hl = (5*hl) + (5*hl)
 	ld de, PokemonNames
 	add hl, de
@@ -138,8 +150,6 @@ GetCurItemName::
 	ld [wNamedObjectIndex], a
 GetItemName::
 ; Get item name wNamedObjectIndex.
-	push hl
-	push bc
 	ld a, [wNamedObjectIndex]
 	ld [wCurSpecies], a
 	ld a, ITEM_NAME
@@ -148,12 +158,9 @@ GetItemName::
 GetCurKeyItemName::
 ; Get item name from item in CurItem
 	ld a, [wCurKeyItem]
-	inc a
 	ld [wNamedObjectIndex], a
 GetKeyItemName::
 ; Get key item item name wNamedObjectIndex.
-	push hl
-	push bc
 	ld a, [wNamedObjectIndex]
 	ld [wCurSpecies], a
 	ld a, KEY_ITEM_NAME
@@ -161,12 +168,27 @@ GetKeyItemName::
 
 GetApricornName::
 ; Get apricorn name wNamedObjectIndex.
-	push hl
-	push bc
 	ld a, [wNamedObjectIndex]
 	ld [wCurSpecies], a
 	ld a, APRICORN_NAME
+	jr PutNameInBufferAndGetName
+
+GetExpCandyName::
+	ld a, [wNamedObjectIndex]
+	dec a
+	ld [wCurSpecies], a
+	ld a, EXP_CANDY_NAME
+	jr PutNameInBufferAndGetName
+
+GetWingName::
+; Get wing name wNamedObjectIndex.
+	ld a, [wNamedObjectIndex]
+	ld [wCurSpecies], a
+	ld a, WING_NAME
+	; fallthrough
 PutNameInBufferAndGetName::
+	push hl
+	push bc
 	ld [wNamedObjectTypeBuffer], a
 	call GetName
 	ld de, wStringBuffer1

@@ -9,7 +9,13 @@
 OpenMartDialog::
 	ld a, c
 	ld [wMartType], a
-	call GetMart
+	ld hl, Marts
+	add hl, de
+	add hl, de
+	ld a, [hli]
+	ld d, [hl]
+	ld e, a
+	ld b, BANK(Marts)
 	call LoadMartPointer
 	ld a, [wMartType]
 	call StackJumpTable
@@ -27,6 +33,7 @@ OpenMartDialog::
 	dw TMMart
 	dw BlueCardMart
 	dw BTMart
+	dw ExpCandyMart
 
 MartDialog:
 	xor a ; MARTTYPE_STANDARD, STANDARDMART_HOWMAYIHELPYOU
@@ -42,6 +49,36 @@ HerbShop:
 	call BuyMenu
 	ld hl, Text_HerbShop_ComeAgain
 	jmp MartTextbox
+
+ExpCandyMart:
+	ld b, BANK(ExpCandyShopData)
+	ld de, ExpCandyShopData
+	call LoadMartPointer
+	call ReadMart
+	call LoadStandardMenuHeader
+	ld hl, .Text_ExpCandyMart_Intro
+	call MartTextbox
+	call ExpCandyBuyMenu
+	ld hl, .Text_ExpCandyMart_ComeAgain
+	jmp MartTextbox
+
+.Text_ExpCandyMart_Intro:
+	text "You again? Guess"
+	line "you liked that"
+	cont "candy."
+
+	para "I can hook you up."
+	line "For a price, of"
+	cont "course."
+	done
+
+.Text_ExpCandyMart_ComeAgain
+	text "Don't tell anyone"
+	line "where you got"
+	cont "these, okay?"
+	done
+
+INCLUDE "data/items/exp_candy_shop.asm"
 
 BargainShop:
 	ld b, BANK(BargainShopData)
@@ -78,7 +115,7 @@ RooftopSale:
 	ld b, BANK(RooftopSaleData1) ; BANK(RooftopSaleData2)
 	ld de, RooftopSaleData1
 	ld hl, wStatusFlags
-	bit 6, [hl] ; hall of fame
+	bit STATUSFLAGS_HALL_OF_FAME_F, [hl]
 	jr z, .ok
 	ld de, RooftopSaleData2
 .ok
@@ -176,16 +213,6 @@ LoadMartPointer:
 	ld [wMartJumptableIndex], a
 	ld [wBargainShopFlags], a
 	ld [wFacingDirection], a
-	ret
-
-GetMart:
-	ld hl, Marts
-	add hl, de
-	add hl, de
-	ld e, [hl]
-	inc hl
-	ld d, [hl]
-	ld b, BANK(Marts)
 	ret
 
 StandardMart:
@@ -439,6 +466,13 @@ BuyMenu_Finish:
 	and a
 	ret
 
+ExpCandyBuyMenu:
+	call BuyMenu_InitGFX
+.loop
+	call ExpCandyBuyMenuLoop ; menu loop
+	jr nc, .loop
+	jr BuyMenu_Finish
+
 BuyTMMenu:
 	call BuyMenu_InitGFX
 .loop
@@ -507,7 +541,7 @@ BuyMenu_InitGFX:
 	call ApplyTilemapInVBlank
 	ld a, CGB_BUYMENU_PALS
 	call GetCGBLayout
-	call SetPalettes
+	call SetDefaultBGPAndOBP
 ; Not graphics-related, but common to all BuyMenu_InitGFX callers
 	xor a
 	ld [wMenuScrollPositionBackup], a
@@ -580,6 +614,7 @@ GetMartDialogGroup:
 	dwb .TMMartPointers, 0
 	dwb .BlueCardMartPointers, 0
 	dwb .BTMartPointers, 0
+	dwb .ExpCandyMartPointers, 2
 
 .StandardMartPointers:
 	dw Text_Mart_HowMany
@@ -669,6 +704,14 @@ GetMartDialogGroup:
 	dw Text_BTMart_HereYouGo
 	dw BlueCardBuyMenuLoop
 
+.ExpCandyMartPointers:
+	dw Text_Mart_HowMany
+	dw Text_Mart_CostsThisMuch
+	dw Text_Mart_InsufficientFunds
+	dw Text_Mart_BagFull
+	dw Text_Mart_HereYouGo
+	dw ExpCandyBuyMenuLoop
+
 BuyMenuLoop:
 	farcall PlaceMoneyTopRight
 	call UpdateSprites
@@ -731,6 +774,55 @@ BuyMenuLoop:
 .PremierBallText
 	text_far MartPremierBallText
 	text_end
+
+ExpCandyBuyMenuLoop:
+	farcall PlaceMoneyTopRight
+	call UpdateSprites
+	ld hl, MenuDataHeader_ExpCandyBuy
+	call CopyMenuHeader
+	call DoMartScrollingMenu
+	call SpeechTextbox
+	ld a, [wMenuJoypad]
+	cp B_BUTTON
+	jmp z, MartMenuLoop_SetCarry
+	call MartAskPurchaseQuantity
+	jr c, .cancel
+	call ExpCandyConfirmPurchase
+	jr c, .cancel
+	ld de, wMoney
+	ld bc, hMoneyTemp
+	call CompareMoney
+	jmp c, MartMenuLoop_InsufficientFunds
+	call ReceiveExpCandy
+	jmp nc, MartMenuLoop_InsufficientBagSpace
+	call PlayTransactionSound
+	ld de, wMoney
+	ld bc, hMoneyTemp
+	call TakeMoney
+	ld a, MARTTEXT_HERE_YOU_GO
+	call LoadBuyMenuText
+	call JoyWaitAorB
+.cancel
+	call SpeechTextbox
+	and a
+	ret
+
+ReceiveExpCandy:
+	ld hl, wCandyAmounts
+	ld a, [wCurItem]
+	dec a
+	ld d, 0
+	ld e, a
+	add hl, de
+	ld a, [wItemQuantityChangeBuffer]
+	ld c, a
+	ld a, [hl]
+	add c
+	cp 100
+	ret nc
+	ld [hl], a
+	scf
+	ret
 
 BuyTMMenuLoop:
 	farcall PlaceMoneyTopRight
@@ -866,6 +958,15 @@ BTMartConfirmPurchase:
 	call LoadBuyMenuText
 	jmp YesNoBox
 
+ExpCandyConfirmPurchase:
+	ld a, [wCurItem]
+	ld [wNamedObjectIndex], a
+	call GetExpCandyName
+	call CopyName1
+	ld a, MARTTEXT_COSTS_THIS_MUCH
+	call LoadBuyMenuText
+	jmp YesNoBox
+
 TMMartConfirmPurchase:
 	ld a, [wCurTMHM]
 	ld [wNamedObjectIndex], a
@@ -942,9 +1043,9 @@ RooftopSaleAskPurchaseQuantity:
 	add hl, de
 	add hl, de
 	inc hl
-	ld e, [hl]
-	inc hl
+	ld a, [hli]
 	ld d, [hl]
+	ld e, a
 
 	farcall RooftopSale_SelectQuantityToBuy
 	jmp ExitMenu
@@ -1059,9 +1160,8 @@ Text_AdventurerMart_CostsThisMuch:
 	text_end
 
 MenuDataHeader_Buy:
-	db $40 ; flags
-	db 03, 06 ; start coords
-	db 11, 19 ; end coords
+	db MENU_BACKUP_TILES
+	menu_coords 6, 3, 19, 11
 	dw .menudata2
 	db 1 ; default option
 
@@ -1070,14 +1170,28 @@ MenuDataHeader_Buy:
 	db 4, 8 ; rows, columns
 	db 1 ; horizontal spacing
 	dbw 0, wCurMart
-	dba PlaceMartItemName
+	dba PlaceMenuItemName
 	dba MartMenu_PrintBCDPrices
 	dba UpdateItemIconAndDescriptionAndBagQuantity
 
+MenuDataHeader_ExpCandyBuy:
+	db MENU_BACKUP_TILES
+	menu_coords 6, 3, 19, 11
+	dw .menudata2
+	db 1 ; default option
+
+.menudata2
+	db $30 ; pointers
+	db 4, 8 ; rows, columns
+	db 1 ; horizontal spacing
+	dbw 0, wCurMart
+	dba PlaceMenuExpCandyName
+	dba MartMenu_PrintBCDPrices
+	dba UpdateExpCandyIconAndDescriptionAndBagQuantity
+
 TMMenuDataHeader_Buy:
-	db $40 ; flags
-	db 03, 06 ; start coords
-	db 11, 19 ; end coords
+	db MENU_BACKUP_TILES
+	menu_coords 6, 3, 19, 11
 	dw .menudata2
 	db 1 ; default option
 
@@ -1105,9 +1219,8 @@ MartMenu_PrintBCDPrices:
 	jmp PrintBCDNumber
 
 BlueCardMenuDataHeader_Buy:
-	db $40 ; flags
-	db 03, 06 ; start coords
-	db 11, 19 ; end coords
+	db MENU_BACKUP_TILES
+	menu_coords 6, 3, 19, 11
 	dw .menudata2
 	db 1 ; default option
 
@@ -1116,7 +1229,7 @@ BlueCardMenuDataHeader_Buy:
 	db 4, 8 ; rows, columns
 	db 1 ; horizontal spacing
 	dbw 0, wCurMart
-	dba PlaceMartItemName
+	dba PlaceMenuItemName
 	dba .PrintPointCosts
 	dba UpdateItemIconAndDescriptionAndBagQuantity
 
@@ -1134,9 +1247,8 @@ BlueCardMenuDataHeader_Buy:
 	db " Pts@"
 
 BTMenuDataHeader_Buy:
-	db $40 ; flags
-	db 03, 06 ; start coords
-	db 11, 19 ; end coords
+	db MENU_BACKUP_TILES
+	menu_coords 6, 3, 19, 11
 	dw .menudata2
 	db 1 ; default option
 
@@ -1145,7 +1257,7 @@ BTMenuDataHeader_Buy:
 	db 4, 8 ; rows, columns
 	db 1 ; horizontal spacing
 	dbw 0, wCurMart
-	dba PlaceMartItemName
+	dba PlaceMenuItemName
 	dba .PrintPointCosts
 	dba UpdateItemIconAndDescriptionAndBagQuantity
 
@@ -1468,9 +1580,8 @@ Text_Mart_HowMayIHelpYou:
 	text_end
 
 MenuDataHeader_BuySell:
-	db $40 ; flags
-	db 00, 00 ; start coords
-	db 08, 07 ; end coords
+	db MENU_BACKUP_TILES
+	menu_coords 0, 0, 7, 8
 	dw .menudata2
 	db 1 ; default option
 

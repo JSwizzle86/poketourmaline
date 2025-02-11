@@ -60,5 +60,4 @@ bank_ends.txt
 .DS_STORE
 
 # local tools
-rgbds/
 deploy.sh

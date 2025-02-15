@@ -328,7 +328,7 @@ ENDM
 	map_const OAKS_LAB,                                    5,  6 ;  7
 
 	newgroup                                                     ; 14
-	map_const ROUTE_2_NORTH,                              10, 18 ;  1
+	map_const ROUTE_2_NORTH,                              17, 15 ;  1
 	map_const ROUTE_3,                                    36, 11 ;  2
 	map_const ROUTE_3_POKECENTER_1F,                       6,  4 ;  3
 	map_const PEWTER_CITY,                                20, 18 ;  4

@@ -8,7 +8,7 @@ Route2North_MapScriptHeader:
 	warp_event 16, 35, ROUTE_2_GATE, 1
 	warp_event 17, 35, ROUTE_2_GATE, 2
 	warp_event 12,  9, DIGLETTS_CAVE, 3
-	warp_event  1, 11, VIRIDIAN_FOREST_PEWTER_GATE, 3
+	warp_event 10, 29, VIRIDIAN_FOREST_PEWTER_GATE, 3
 	warp_event  2, 11, VIRIDIAN_FOREST_PEWTER_GATE, 4
 
 	def_coord_events

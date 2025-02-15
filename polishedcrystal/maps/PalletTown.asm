@@ -5,7 +5,7 @@ PalletTown_MapScriptHeader:
 	callback MAPCALLBACK_NEWMAP, PalletTownFlyPoint
 
 	def_warp_events
-	warp_event  5,  5, REDS_HOUSE_1F, 1
+	warp_event  5,  5, ROUTE_2_NORTH, 5
 	warp_event 13,  5, BLUES_HOUSE_1F, 1
 	warp_event 12, 11, OAKS_LAB, 1
 
@@ -18,6 +18,7 @@ PalletTown_MapScriptHeader:
 	bg_event 11,  5, BGEVENT_JUMPTEXT, BluesHouseSignText
 
 	def_object_events
+	object_event  3,  6, SPRITE_FAT_GUY, SPRITEMOVEDATA_STANDING_DOWN, 0, 0, -1, -1, 0, OBJECTTYPE_SCRIPT, 0, PalletTownGiveMewTwo, -1
 	object_event  3,  8, SPRITE_AROMA_LADY, SPRITEMOVEDATA_WANDER, 2, 2, -1, -1, 0, OBJECTTYPE_COMMAND, jumptextfaceplayer, PalletTownTeacherText, -1
 	object_event 12, 14, SPRITE_FAT_GUY, SPRITEMOVEDATA_WALK_LEFT_RIGHT, 0, 2, -1, -1, PAL_NPC_GREEN, OBJECTTYPE_COMMAND, jumptextfaceplayer, PalletTownFisherText, -1
 	object_event 17,  7, SPRITE_SCHOOLBOY, SPRITEMOVEDATA_WALK_UP_DOWN, 2, 0, -1, -1, 0, OBJECTTYPE_COMMAND, jumptextfaceplayer, PalletTownYoungsterText, -1
@@ -26,6 +27,25 @@ PalletTown_MapScriptHeader:
 PalletTownFlyPoint:
 	setflag ENGINE_FLYPOINT_PALLET
 	endcallback
+
+PalletTownGiveMewTwo:
+	opentext
+	writetext PalletTownMewTwoText
+	waitbutton
+	givepoke MEWTWO, PLAIN_FORM, 100, ORAN_BERRY
+	writetext PalletTownMewTwoTextEnd
+	closetext
+	end
+
+PalletTownMewTwoText:
+	text "HEY KID!"
+	para "Have this..."
+	done
+PalletTownMewTwoTextEnd:
+	text "Have a merry"
+	line "Christmas."
+	para "Now go away!"
+	done
 
 PalletTownTeacherText:
 	text "I'm raising #-"

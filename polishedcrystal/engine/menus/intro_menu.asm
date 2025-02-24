@@ -701,7 +701,7 @@ ElmText2:
 	xor a
 	ld [wStereoPanningMask], a
 	ld [wCryTracks], a
-	ld de, GLACEON - 1
+	ld de, KABUTOPS - 1
 	call PlayCryHeader
 	call WaitSFX
 	ld hl, ElmText3

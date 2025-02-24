@@ -624,10 +624,10 @@ if !DEF(DEBUG)
 	call FadeToWhite
 	call ClearTileMap
 
-	ld a, LOW(GLACEON)
+	ld a, LOW(KABUTOPS)
 	ld [wCurSpecies], a
 	ld [wCurPartySpecies], a
-	ld a, HIGH(GLACEON) << MON_EXTSPECIES_F
+	ld a, HIGH(KABUTOPS) << MON_EXTSPECIES_F
 	ld [wCurForm], a
 	ld [wTempMonForm], a
 	call GetBaseData
